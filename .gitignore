@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+*.vsix
+
+# IDE
+.vscode-test/
+.vscode/*.log
+
+# Temp files
+.temp/
+
+# OS files
+.DS_Store
+Thumbs.db

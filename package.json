@@ -1,0 +1,140 @@
+{
+  "name": "vscode-schemaforge",
+  "displayName": "SchemaForge",
+  "description": "Bidirectional schema converter — convert between SQL DDL, Prisma, Django, TypeORM, SQLAlchemy, Alembic, JSON Schema, GraphQL, EF Core, Scala case classes",
+  "version": "1.7.0",
+  "publisher": "revenue-holdings",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Coding-Dev-Tools/schemaforge"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Formatters",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:sql",
+    "onLanguage:prisma",
+    "onLanguage:python",
+    "onLanguage:typescript",
+    "onLanguage:graphql",
+    "onLanguage:csharp",
+    "onLanguage:scala",
+    "onCommand:schemaforge.convert",
+    "onCommand:schemaforge.diff",
+    "onCommand:schemaforge.detect",
+    "onCommand:schemaforge.quickConvert",
+    "onCustomEditor:schemaforge.previewEditor"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "schemaforge.convert",
+        "title": "SchemaForge: Convert Schema File..."
+      },
+      {
+        "command": "schemaforge.quickConvert",
+        "title": "SchemaForge: Quick Convert (Active Editor)"
+      },
+      {
+        "command": "schemaforge.diff",
+        "title": "SchemaForge: Diff Two Schema Files"
+      },
+      {
+        "command": "schemaforge.detect",
+        "title": "SchemaForge: Detect Format"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "schemaforge.convert",
+          "when": "resourceExtname =~ /\\.(sql|prisma|graphql|cs|scala)$/",
+          "group": "schemaforge"
+        },
+        {
+          "command": "schemaforge.detect",
+          "when": "resourceExtname =~ /\\.(sql|prisma|graphql|cs|scala|json|yaml|yml)$/",
+          "group": "schemaforge"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "schemaforge.quickConvert",
+          "when": "editorHasSelection",
+          "group": "schemaforge"
+        }
+      ]
+    },
+    "customEditors": [
+      {
+        "viewType": "schemaforge.previewEditor",
+        "displayName": "SchemaForge Preview",
+        "selector": [
+          {
+            "filenamePattern": "*.schemaforge"
+          }
+        ]
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "schemaforge.quickConvert",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s",
+        "when": "editorFocus"
+      },
+      {
+        "command": "schemaforge.detect",
+        "key": "ctrl+alt+d",
+        "mac": "cmd+alt+d",
+        "when": "editorFocus"
+      }
+    ],
+    "configuration": {
+      "title": "SchemaForge",
+      "properties": {
+        "schemaforge.cliPath": {
+          "type": "string",
+          "default": "schemaforge",
+          "description": "Path to the schemaforge CLI executable. Default tries from PATH."
+        },
+        "schemaforge.defaultTargetFormat": {
+          "type": "string",
+          "default": "sql",
+          "enum": ["sql", "prisma", "drizzle", "typeorm", "django", "sqlalchemy", "alembic", "json_schema", "graphql", "ef", "scala"],
+          "description": "Default target format for quick conversions"
+        },
+        "schemaforge.livePreview.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable live preview panel when editing schema files"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "^2.3.8",
+    "typescript": "^5.3.0",
+    "eslint": "^8.50.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  }
+}
