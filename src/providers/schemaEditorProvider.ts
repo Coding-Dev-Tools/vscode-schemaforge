@@ -69,8 +69,8 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
     }
 
     private async writeTempFile(content: string): Promise<string> {
-        const fs = require('fs');
-        const path = require('path');
+        const fs = await import('fs');
+        const path = await import('path');
         const tmpDir = path.join(__dirname, '..', '..', '.temp');
         if (!fs.existsSync(tmpDir)) {
             fs.mkdirSync(tmpDir, { recursive: true });

@@ -96,7 +96,7 @@ export class SchemaPreviewPanel {
             let detectDetails = '';
             try {
                 detectDetails = await execSchemaForge(['detect', '--verbose', this.currentFile]);
-            } catch { }
+            } catch { /* detect --verbose is best-effort */ }
 
             this.panel.webview.html = this.getPreviewHtml(
                 this.currentFile,
