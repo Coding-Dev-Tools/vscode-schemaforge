@@ -1,7 +1,7 @@
 {
   "name": "vscode-schemaforge",
   "displayName": "SchemaForge",
-  "description": "Bidirectional schema converter — convert between SQL DDL, Prisma, Django, TypeORM, SQLAlchemy, Alembic, JSON Schema, GraphQL, EF Core, Scala case classes",
+  "description": "Bidirectional schema converter \u2014 convert between SQL DDL, Prisma, Django, TypeORM, SQLAlchemy, Alembic, JSON Schema, GraphQL, EF Core, Scala case classes",
   "version": "1.7.0",
   "publisher": "revenue-holdings",
   "license": "MIT",
@@ -108,7 +108,19 @@
         "schemaforge.defaultTargetFormat": {
           "type": "string",
           "default": "sql",
-          "enum": ["sql", "prisma", "drizzle", "typeorm", "django", "sqlalchemy", "alembic", "json_schema", "graphql", "ef", "scala"],
+          "enum": [
+            "sql",
+            "prisma",
+            "drizzle",
+            "typeorm",
+            "django",
+            "sqlalchemy",
+            "alembic",
+            "json_schema",
+            "graphql",
+            "ef",
+            "scala"
+          ],
           "description": "Default target format for quick conversions"
         },
         "schemaforge.livePreview.enabled": {
@@ -136,5 +148,8 @@
     "eslint": "^8.50.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
