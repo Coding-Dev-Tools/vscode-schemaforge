@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { execSchemaForge } from '../cli';
+import { execSchemaForge, getAvailableFormats } from '../cli';
 
 /**
  * WebView panel for live schema preview.
