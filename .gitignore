@@ -15,3 +15,8 @@ out/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local opencode config
+AGENTS.md
+.agents/
+
