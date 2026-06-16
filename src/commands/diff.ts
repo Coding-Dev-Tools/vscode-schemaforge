@@ -31,7 +31,6 @@ export class DiffCommand {
         const uriB = vscode.Uri.parse(`untitled:SchemaDiff_B (${detectB})`);
 
         const docA = await vscode.workspace.openTextDocument(uriA);
-        const docB = await vscode.workspace.openTextDocument(uriB);
 
         const editA = new vscode.WorkspaceEdit();
         editA.insert(uriA, new vscode.Position(0, 0), canonicalA);

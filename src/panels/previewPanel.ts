@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { execSchemaForge, getAvailableFormats } from '../cli';
+import { execSchemaForge } from '../cli';
 
 /**
  * WebView panel for live schema preview.
@@ -164,7 +164,7 @@ export class SchemaPreviewPanel {
 <body>
     <div class="header">
         <h3>Schema Preview</h3>
-        <span class="source-badge">${sourceFormat}</span>
+        <span class="source-badge">${this.escapeHtml(sourceFormat)}</span>
         <span class="file-path">${this.escapeHtml(fileName || '')}</span>
     </div>
     <div class="tabs">${tabButtons}</div>

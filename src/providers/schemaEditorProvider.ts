@@ -71,11 +71,9 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
     private async writeTempFile(content: string): Promise<string> {
         const fs = await import('fs');
         const path = await import('path');
-        const tmpDir = path.join(__dirname, '..', '..', '.temp');
-        if (!fs.existsSync(tmpDir)) {
-            fs.mkdirSync(tmpDir, { recursive: true });
-        }
-        const tmpFile = path.join(tmpDir, `schemaforge_preview_${Date.now()}.tmp`);
+        const os = await import('os');
+        const tmpDir = await import('fs').then(m => m.promises.mkdtemp(path.join(os.tmpdir(), 'schemaforge-')));
+        const tmpFile = path.join(tmpDir, 'schema.tmp');
         fs.writeFileSync(tmpFile, content, 'utf-8');
         return tmpFile;
     }
@@ -93,11 +91,19 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
     }
 
     private getErrorHtml(message: string): string {
-        const escaped = message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const escaped = this.escapeHtml(message);
         return `<!DOCTYPE html>
 <html><body style="padding: 16px;">
     <div style="color: var(--vscode-errorForeground);"><strong>Error:</strong><pre>${escaped}</pre></div>
 </body></html>`;
+    }
+
+    private escapeHtml(text: string): string {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
     private getPreviewHtml(
@@ -141,8 +147,8 @@ code { font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
 <body>
 <div class="header">
     <h2>SchemaForge</h2>
-    <span class="badge">${sourceFormat}</span>
-    <span class="fname">${fileName.replace(/&/g, '&amp;')}</span>
+    <span class="badge">${this.escapeHtml(sourceFormat)}</span>
+    <span class="fname">${this.escapeHtml(fileName)}</span>
 </div>
 <div class="tabs">${tabButtons}</div>
 <div class="content">${tabPanes}</div>
