@@ -109,7 +109,7 @@
         "schemaforge.defaultTargetFormat": {
           "type": "string",
           "default": "sql",
-          "enum": ["sql", "prisma", "django", "typeorm", "sqlalchemy", "alembic", "json_schema", "graphql", "ef", "scala"],
+          "enum": ["sql", "prisma", "django", "drizzle", "typeorm", "sqlalchemy", "alembic", "json_schema", "graphql", "ef", "scala"],
           "description": "Default target format for quick conversions"
         },
         "schemaforge.livePreview.enabled": {
