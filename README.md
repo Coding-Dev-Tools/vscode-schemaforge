@@ -109,8 +109,8 @@ If the CLI is installed at a custom path, set it in VS Code settings (see [Confi
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `schemaforge.cliPath` | `schemaforge` | Path to the `schemaforge` CLI executable. Set this if the CLI is not on your PATH or you use a specific version. |
-| `schemaforge.defaultTargetFormat` | `sql` | Default target format for Quick Convert. Options: `sql`, `prisma`, `django`, `typeorm`, `sqlalchemy`, `alembic`, `jsonschema`, `graphql`, `efcore`, `scala`. |
-| `schemaforge.livePreview.enabled` | `true` | Enable/disable the live preview panel for `.schemaforge` files. |
+| `schemaforge.defaultTargetFormat` | `sql` | Default conversion target (`sql`, `prisma`, `django`, `drizzle`, `sqlalchemy`, `alembic`, `json_schema`, `graphql`, `ef`, `scala`) |
+| `schemaforge.livePreview.enabled` | `true` | Enable live preview when editing schema files |
 
 ---
 

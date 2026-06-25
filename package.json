@@ -10,7 +10,8 @@
     "url": "https://github.com/Coding-Dev-Tools/schemaforge"
   },
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": ">=1.85.0",
+    "node": ">=18.0.0"
   },
   "categories": [
     "Programming Languages",
@@ -108,7 +109,7 @@
         "schemaforge.defaultTargetFormat": {
           "type": "string",
           "default": "sql",
-          "enum": ["sql", "prisma", "drizzle", "typeorm", "django", "sqlalchemy", "alembic", "json_schema", "graphql", "ef", "scala"],
+          "enum": ["sql", "prisma", "django", "typeorm", "sqlalchemy", "alembic", "json_schema", "graphql", "ef", "scala"],
           "description": "Default target format for quick conversions"
         },
         "schemaforge.livePreview.enabled": {
@@ -120,7 +121,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
@@ -133,8 +134,8 @@
     "@vscode/test-cli": "^0.0.4",
     "@vscode/test-electron": "^2.3.8",
     "typescript": "^5.3.0",
-    "eslint": "^8.50.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0"
+    "eslint": "^8.57.1",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0"
   }
 }
