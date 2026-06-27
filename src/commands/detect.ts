@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
+import { getOutputChannel } from '../output';
 
 export class DetectCommand {
     static async run(uri?: vscode.Uri) {
@@ -21,7 +22,7 @@ export class DetectCommand {
 
         // Show detailed info in a message
         const detailedInfo = await execSchemaForge(['detect', '--verbose', sourcePath]);
-        const output = vscode.window.createOutputChannel('SchemaForge: Format Detection');
+        const output = getOutputChannel('SchemaForge: Format Detection');
         output.clear();
         output.appendLine(`File: ${sourcePath}`);
         output.appendLine(`Detected Format: ${detectedFormat}`);

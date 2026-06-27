@@ -4,6 +4,8 @@ import { DiffCommand } from './commands/diff';
 import { DetectCommand } from './commands/detect';
 import { SchemaPreviewPanel } from './panels/previewPanel';
 import { SchemaPreviewProvider } from './providers/schemaEditorProvider';
+import { runCommand } from './runCommand';
+import { disposeOutputChannels } from './output';
 
 let previewPanel: SchemaPreviewPanel | undefined;
 
@@ -11,27 +13,27 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('SchemaForge extension activating...');
 
     // --- Commands ---
-    const convertCmd = vscode.commands.registerCommand('schemaforge.convert', () =>
-        ConvertCommand.run()
+    const convertCmd = vscode.commands.registerCommand('schemaforge.convert',
+        runCommand((uri?: vscode.Uri) => ConvertCommand.run(uri))
     );
 
-    const quickConvertCmd = vscode.commands.registerCommand('schemaforge.quickConvert', () =>
-        ConvertCommand.quickConvert()
+    const quickConvertCmd = vscode.commands.registerCommand('schemaforge.quickConvert',
+        runCommand(() => ConvertCommand.quickConvert())
     );
 
-    const diffCmd = vscode.commands.registerCommand('schemaforge.diff', () =>
-        DiffCommand.run()
+    const diffCmd = vscode.commands.registerCommand('schemaforge.diff',
+        runCommand(() => DiffCommand.run())
     );
 
-    const detectCmd = vscode.commands.registerCommand('schemaforge.detect', () =>
-        DetectCommand.run()
+    const detectCmd = vscode.commands.registerCommand('schemaforge.detect',
+        runCommand((uri?: vscode.Uri) => DetectCommand.run(uri))
     );
 
     // --- Live Preview Panel (WebView) ---
     previewPanel = new SchemaPreviewPanel(context);
-    const previewCmd = vscode.commands.registerCommand('schemaforge.showPreview', () => {
-        previewPanel?.show();
-    });
+    const previewCmd = vscode.commands.registerCommand('schemaforge.showPreview',
+        runCommand(() => previewPanel?.show())
+    );
 
     // --- Register on-save listener for live preview ---
     const saveListener = vscode.workspace.onDidSaveTextDocument((doc) => {
@@ -70,6 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() {
     previewPanel?.dispose();
+    disposeOutputChannels();
 }
 
 function isSchemaFile(filePath: string): boolean {
