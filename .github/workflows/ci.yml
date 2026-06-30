@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: ci
 on:
   push:
@@ -20,3 +21,38 @@ jobs:
       - run: npm ci || npm install
       - run: npm run lint --if-present
       - run: npm test --if-present
+=======
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile
+        run: npm run compile
+
+      - name: Lint
+        run: npm run lint
+>>>>>>> 86cb06a7d5e26a330db483335957aa048f2881bb

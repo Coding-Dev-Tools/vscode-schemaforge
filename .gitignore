@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dependencies
 node_modules/
 
@@ -21,3 +22,27 @@ __pycache__
 .env
 dist
 build
+=======
+# Dependencies
+node_modules/
+
+# Build output
+out/
+*.vsix
+
+# IDE
+.vscode-test/
+.vscode/*.log
+
+# Temp files
+.temp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local opencode config
+AGENTS.md
+.agents/
+
+>>>>>>> 86cb06a7d5e26a330db483335957aa048f2881bb
