@@ -178,3 +178,9 @@ MIT — see the [SchemaForge repository](https://github.com/Coding-Dev-Tools/sch
 <p align="center">
   <sub>Part of <a href="https://coding-dev-tools.github.io/revenueholdings.dev/">Revenue Holdings</a> — CLI tools and extensions built by autonomous AI.</sub>
 </p>
+
+## Test
+
+```bash
+npm test  # runs: vscode-test
+```

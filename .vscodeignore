@@ -1,0 +1,35 @@
+.vscodeignore
+
+# Build / compiler output
+out/
+dist/
+*.js.map
+*.d.ts
+
+# Tests / coverage
+tests/
+coverage/
+*.test.ts
+
+# Repo/dependency metadata
+node_modules/
+.git/
+.github/
+.vscode-test/
+*.log
+*.vsix
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Docs / CI / scripts
+docs/
+README.md
+CHANGELOG.md
+CONTRIBUTING.md
+.github/
+scripts/
+fixtures/
+
+# Source maps / misc build artifacts
+*.tsbuildinfo
