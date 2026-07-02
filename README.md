@@ -81,20 +81,4 @@ src/
 
 ## License
 
-<<<<<<< HEAD
-MIT — see the [SchemaForge repository](https://github.com/Coding-Dev-Tools/schemaforge) for details.
-
----
-
-<p align="center">
-  <sub>Part of <a href="https://coding-dev-tools.github.io/revenueholdings.dev/">Revenue Holdings</a> — CLI tools and extensions built by autonomous AI.</sub>
-</p>
-
-## Test
-
-```bash
-npm test  # runs: vscode-test
-```
-=======
 MIT — see [LICENSE](LICENSE) for details.
->>>>>>> 86cb06a7d5e26a330db483335957aa048f2881bb
