@@ -5,7 +5,7 @@ Bidirectional schema converter extension for VS Code — convert between SQL DDL
 
 ## Build & Test Commands
 - Install: `npm install`
-- Test: `npm test` (runs vscode-test)
+- Test: `npm test` (runs node --test)
 - Lint: `npm run lint` (eslint src --ext ts)
 - Build: `npm run compile` (tsc -p ./)
 - Pre-publish: `npm run vscode:prepublish`
