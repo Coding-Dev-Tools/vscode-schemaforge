@@ -1,27 +1,3 @@
-<<<<<<< HEAD
-name: ci
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18, 20]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
-      - run: npm ci || npm install
-      - run: npm run lint --if-present
-      - run: npm test --if-present
-=======
 name: CI
 
 on:
@@ -34,8 +10,11 @@ permissions:
   contents: read
 
 jobs:
-  build-and-lint:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ matrix.node-version }}
           cache: "npm"
 
       - name: Install dependencies
@@ -55,4 +34,6 @@ jobs:
 
       - name: Lint
         run: npm run lint
->>>>>>> 86cb06a7d5e26a330db483335957aa048f2881bb
+
+      - name: Test
+        run: npm test --if-present
