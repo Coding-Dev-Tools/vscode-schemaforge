@@ -1,0 +1,8 @@
+{
+  "version": "2",
+  "label": "SchemaForge tests",
+  "platform": "web",
+  "workspace": ".",
+  "testFiles": "tests/**/*.test.js",
+  "srcDir": "./out"
+}
