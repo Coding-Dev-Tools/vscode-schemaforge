@@ -31,7 +31,7 @@ The CLI must be available on your PATH.
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `schemaforge.cliPath` | `schemaforge` | Path to the schemaforge CLI executable |
-| `schemaforge.defaultTargetFormat` | `sql` | Default conversion target (`sql`, `prisma`, `django`, `sqlalchemy`, `alembic`, `json_schema`, `graphql`, `ef`, `scala`) |
+| `schemaforge.defaultTargetFormat` | `sql` | Default conversion target (`sql`, `prisma`, `drizzle`, `typeorm`, `django`, `sqlalchemy`, `alembic`, `json_schema`, `graphql`, `ef`, `scala`) |
 | `schemaforge.livePreview.enabled` | `true` | Enable live preview when editing schema files |
 
 ## Commands
@@ -82,3 +82,11 @@ src/
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for our security policy.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.

@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Coding-Dev-Tools/schemaforge"
+    "url": "https://github.com/Coding-Dev-Tools/vscode-schemaforge"
   },
   "engines": {
     "vscode": "^1.85.0"
