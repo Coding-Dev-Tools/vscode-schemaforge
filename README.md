@@ -21,7 +21,7 @@ Part of the [DevForge](https://devforge.revenueholdings.dev) open-source CLI too
 Requires [SchemaForge](https://github.com/Coding-Dev-Tools/schemaforge) CLI installed:
 
 ```bash
-pip install schemaforge
+pip install git+https://github.com/Coding-Dev-Tools/schemaforge.git
 ```
 
 The CLI must be available on your PATH.
