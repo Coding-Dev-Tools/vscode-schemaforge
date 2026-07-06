@@ -26,7 +26,6 @@ export class ConvertCommand {
 
         // Let user pick target format
         const formats = ['sql', 'prisma', 'drizzle', 'typeorm', 'django', 'sqlalchemy', 'alembic', 'json_schema', 'graphql', 'ef', 'scala'];
-        const defaultTarget = vscode.workspace.getConfiguration('schemaforge').get('defaultTargetFormat', 'prisma');
 
         const target = await vscode.window.showQuickPick(
             formats.filter(f => f !== detectedFormat),
