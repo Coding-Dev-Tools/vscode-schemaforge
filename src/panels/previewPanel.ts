@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { execSchemaForge, getAvailableFormats } from '../cli';
+import { execSchemaForge } from '../cli';
 
 /**
  * WebView panel for live schema preview.
@@ -87,8 +87,8 @@ export class SchemaPreviewPanel {
                 try {
                     const result = await execSchemaForge(['convert', this.currentFile, '--from', sourceFormat, '--to', fmt]);
                     conversions.push({ format: fmt, result: result || '(empty result)' });
-                } catch (e: any) {
-                    conversions.push({ format: fmt, result: '', error: e.message });
+                } catch (e) {
+                    conversions.push({ format: fmt, result: '', error: e instanceof Error ? e.message : String(e) });
                 }
             }
 
@@ -105,8 +105,8 @@ export class SchemaPreviewPanel {
                 detectDetails
             );
 
-        } catch (e: any) {
-            this.panel.webview.html = this.getErrorHtml(e.message);
+        } catch (e) {
+            this.panel.webview.html = this.getErrorHtml(e instanceof Error ? e.message : String(e));
         }
     }
 

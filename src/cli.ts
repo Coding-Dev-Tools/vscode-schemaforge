@@ -29,7 +29,8 @@ export async function execSchemaForge(args: string[]): Promise<string> {
                 if (stderr) msg += `\nstderr: ${stderr}`;
                 
                 // If the CLI wasn't found, suggest installing
-                if ((error as any).code === 'ENOENT') {
+                const code = (error as unknown as { code?: string | number }).code;
+                if (code === 'ENOENT') {
                     msg = `SchemaForge CLI not found. Make sure 'schemaforge' is installed:\n` +
                           `  pip install schemaforge\n` +
                           `Or set the path in settings: schemaforge.cliPath`;
@@ -61,8 +62,8 @@ export function execSchemaForgeSync(args: string[]): string {
             maxBuffer: 10 * 1024 * 1024,
             encoding: 'utf-8',
         });
-    } catch (e: any) {
-        console.error(`SchemaForge sync exec failed: ${e.message}`);
+    } catch (e) {
+        console.error(`SchemaForge sync exec failed: ${e instanceof Error ? e.message : String(e)}`);
         return '';
     }
 }

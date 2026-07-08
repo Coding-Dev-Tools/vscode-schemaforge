@@ -42,14 +42,14 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
                     try {
                         const result = await execSchemaForge(['convert', tmpFile, '--from', sourceFormat, '--to', fmt]);
                         conversions.push({ format: fmt, result: result || '(empty)' });
-                    } catch (e: any) {
-                        conversions.push({ format: fmt, result: '', error: e.message });
+                    } catch (e) {
+                        conversions.push({ format: fmt, result: '', error: e instanceof Error ? e.message : String(e) });
                     }
                 }
 
                 webviewPanel.webview.html = this.getPreviewHtml(sourceFormat, conversions, document.fileName);
-            } catch (e: any) {
-                webviewPanel.webview.html = this.getErrorHtml(e.message);
+            } catch (e) {
+                webviewPanel.webview.html = this.getErrorHtml(e instanceof Error ? e.message : String(e));
             }
         };
 

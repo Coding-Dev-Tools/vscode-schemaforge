@@ -56,7 +56,7 @@ export class ConvertCommand {
         }
 
         const sourcePath = editor.document.uri.fsPath;
-        const defaultTarget = vscode.workspace.getConfiguration('schemaforge').get('defaultTargetFormat', 'prisma');
+        const defaultTarget = vscode.workspace.getConfiguration('schemaforge').get('defaultTargetFormat', 'sql');
 
         const detectResult = await execSchemaForge(['detect', sourcePath]);
         const detectedFormat = detectResult.trim();
