@@ -1,0 +1,15 @@
+name: release-audit
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  audit:
+    if: false  # disabled: release-audit harness repo (Coding-Dev-Tools/release-audit) does not exist yet
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "release-audit skipped — harness repo not available"

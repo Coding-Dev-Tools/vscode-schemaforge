@@ -17,6 +17,4 @@ out/
 Thumbs.db
 
 # Local opencode config
-AGENTS.md
 .agents/
-
