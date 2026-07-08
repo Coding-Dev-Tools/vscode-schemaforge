@@ -42,14 +42,14 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
                     try {
                         const result = await execSchemaForge(['convert', tmpFile, '--from', sourceFormat, '--to', fmt]);
                         conversions.push({ format: fmt, result: result || '(empty)' });
-                    } catch (e: any) {
-                        conversions.push({ format: fmt, result: '', error: e.message });
+                    } catch (e) {
+                        conversions.push({ format: fmt, result: '', error: e instanceof Error ? e.message : String(e) });
                     }
                 }
 
                 webviewPanel.webview.html = this.getPreviewHtml(sourceFormat, conversions, document.fileName);
-            } catch (e: any) {
-                webviewPanel.webview.html = this.getErrorHtml(e.message);
+            } catch (e) {
+                webviewPanel.webview.html = this.getErrorHtml(e instanceof Error ? e.message : String(e));
             }
         };
 
@@ -71,9 +71,11 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
     private async writeTempFile(content: string): Promise<string> {
         const fs = await import('fs');
         const path = await import('path');
-        const os = await import('os');
-        const tmpDir = await import('fs').then(m => m.promises.mkdtemp(path.join(os.tmpdir(), 'schemaforge-')));
-        const tmpFile = path.join(tmpDir, 'schema.tmp');
+        const tmpDir = path.join(__dirname, '..', '..', '.temp');
+        if (!fs.existsSync(tmpDir)) {
+            fs.mkdirSync(tmpDir, { recursive: true });
+        }
+        const tmpFile = path.join(tmpDir, `schemaforge_preview_${Date.now()}.tmp`);
         fs.writeFileSync(tmpFile, content, 'utf-8');
         return tmpFile;
     }
@@ -91,19 +93,11 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
     }
 
     private getErrorHtml(message: string): string {
-        const escaped = this.escapeHtml(message);
+        const escaped = message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         return `<!DOCTYPE html>
 <html><body style="padding: 16px;">
     <div style="color: var(--vscode-errorForeground);"><strong>Error:</strong><pre>${escaped}</pre></div>
 </body></html>`;
-    }
-
-    private escapeHtml(text: string): string {
-        return text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
     }
 
     private getPreviewHtml(
@@ -147,8 +141,8 @@ code { font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
 <body>
 <div class="header">
     <h2>SchemaForge</h2>
-    <span class="badge">${this.escapeHtml(sourceFormat)}</span>
-    <span class="fname">${this.escapeHtml(fileName)}</span>
+    <span class="badge">${sourceFormat}</span>
+    <span class="fname">${fileName.replace(/&/g, '&amp;')}</span>
 </div>
 <div class="tabs">${tabButtons}</div>
 <div class="content">${tabPanes}</div>

@@ -21,7 +21,7 @@ Part of the [DevForge](https://devforge.revenueholdings.dev) open-source CLI too
 Requires [SchemaForge](https://github.com/Coding-Dev-Tools/schemaforge) CLI installed:
 
 ```bash
-pip install git+https://github.com/Coding-Dev-Tools/schemaforge.git
+pip install schemaforge
 ```
 
 The CLI must be available on your PATH.
@@ -67,16 +67,18 @@ npm run lint
 
 ```
 src/
-├── extension.ts          # Extension entry point + activation
 ├── cli.ts                # SchemaForge CLI wrapper
 ├── commands/
 │   ├── convert.ts        # Convert command handler
 │   ├── detect.ts         # Format detection handler
 │   └── diff.ts           # Schema diff handler
+├── output.ts             # Shared cached OutputChannel helper
 ├── panels/
 │   └── previewPanel.ts   # Live preview WebView panel
-└── providers/
-    └── schemaEditorProvider.ts  # Custom editor provider
+├── providers/
+│   └── schemaEditorProvider.ts  # Custom editor provider
+├── runCommand.ts         # Command wrapper: surface errors + forward URIs
+└── extension.ts          # Extension entry point + activation
 ```
 
 ## License

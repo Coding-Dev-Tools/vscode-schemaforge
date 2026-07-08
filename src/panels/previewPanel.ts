@@ -87,8 +87,8 @@ export class SchemaPreviewPanel {
                 try {
                     const result = await execSchemaForge(['convert', this.currentFile, '--from', sourceFormat, '--to', fmt]);
                     conversions.push({ format: fmt, result: result || '(empty result)' });
-                } catch (e: any) {
-                    conversions.push({ format: fmt, result: '', error: e.message });
+                } catch (e) {
+                    conversions.push({ format: fmt, result: '', error: e instanceof Error ? e.message : String(e) });
                 }
             }
 
@@ -105,8 +105,8 @@ export class SchemaPreviewPanel {
                 detectDetails
             );
 
-        } catch (e: any) {
-            this.panel.webview.html = this.getErrorHtml(e.message);
+        } catch (e) {
+            this.panel.webview.html = this.getErrorHtml(e instanceof Error ? e.message : String(e));
         }
     }
 
@@ -164,7 +164,7 @@ export class SchemaPreviewPanel {
 <body>
     <div class="header">
         <h3>Schema Preview</h3>
-        <span class="source-badge">${this.escapeHtml(sourceFormat)}</span>
+        <span class="source-badge">${sourceFormat}</span>
         <span class="file-path">${this.escapeHtml(fileName || '')}</span>
     </div>
     <div class="tabs">${tabButtons}</div>

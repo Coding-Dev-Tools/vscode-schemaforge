@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
+import { getOutputChannel } from '../output';
 
 export class ConvertCommand {
     static async run(uri?: vscode.Uri) {
@@ -26,7 +27,6 @@ export class ConvertCommand {
 
         // Let user pick target format
         const formats = ['sql', 'prisma', 'drizzle', 'typeorm', 'django', 'sqlalchemy', 'alembic', 'json_schema', 'graphql', 'ef', 'scala'];
-
         const target = await vscode.window.showQuickPick(
             formats.filter(f => f !== detectedFormat),
             { placeHolder: `Source: ${detectedFormat}. Pick target format:`, canPickMany: false }
@@ -37,7 +37,7 @@ export class ConvertCommand {
         const result = await execSchemaForge(['convert', sourcePath, '--from', detectedFormat, '--to', target]);
 
         // Show result in output channel
-        const output = vscode.window.createOutputChannel(`SchemaForge: ${detectedFormat} → ${target}`);
+        const output = getOutputChannel(`SchemaForge: ${detectedFormat} → ${target}`);
         output.clear();
         output.appendLine(`Converted: ${sourcePath}`);
         output.appendLine(`Format: ${detectedFormat} → ${target}`);
@@ -56,14 +56,14 @@ export class ConvertCommand {
         }
 
         const sourcePath = editor.document.uri.fsPath;
-        const defaultTarget = vscode.workspace.getConfiguration('schemaforge').get('defaultTargetFormat', 'prisma');
+        const defaultTarget = vscode.workspace.getConfiguration('schemaforge').get('defaultTargetFormat', 'sql');
 
         const detectResult = await execSchemaForge(['detect', sourcePath]);
         const detectedFormat = detectResult.trim();
 
         const result = await execSchemaForge(['convert', sourcePath, '--from', detectedFormat, '--to', defaultTarget as string]);
 
-        const output = vscode.window.createOutputChannel(`SchemaForge: ${detectedFormat} → ${defaultTarget}`);
+        const output = getOutputChannel(`SchemaForge: ${detectedFormat} → ${defaultTarget}`);
         output.clear();
         output.appendLine(`Converted: ${sourcePath}`);
         output.appendLine(`Format: ${detectedFormat} → ${defaultTarget}`);

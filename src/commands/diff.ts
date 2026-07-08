@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
+import { getOutputChannel } from '../output';
 
 export class DiffCommand {
     static async run() {
@@ -31,6 +32,7 @@ export class DiffCommand {
         const uriB = vscode.Uri.parse(`untitled:SchemaDiff_B (${detectB})`);
 
         const docA = await vscode.workspace.openTextDocument(uriA);
+        await vscode.workspace.openTextDocument(uriB);
 
         const editA = new vscode.WorkspaceEdit();
         editA.insert(uriA, new vscode.Position(0, 0), canonicalA);
@@ -46,7 +48,7 @@ export class DiffCommand {
         // Also show the raw schemaforge diff output
         const forgeDiff = await execSchemaForge(['diff', fileA, fileB]);
         if (forgeDiff) {
-            const output = vscode.window.createOutputChannel('SchemaForge: Diff Result');
+            const output = getOutputChannel('SchemaForge: Diff Result');
             output.clear();
             output.appendLine(`Schema Diff: ${fileA}`);
             output.appendLine(`          vs: ${fileB}`);
