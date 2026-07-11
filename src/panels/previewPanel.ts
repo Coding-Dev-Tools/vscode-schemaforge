@@ -2,6 +2,20 @@ import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
 
 /**
+ * Generate a random nonce so the webview's Content-Security-Policy can
+ * whitelist only our own inline <script>, blocking any injected markup
+ * from executing.
+ */
+function getNonce(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let text = '';
+    for (let i = 0; i < 32; i++) {
+        text += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return text;
+}
+
+/**
  * WebView panel for live schema preview.
  * Shows conversions of the active schema file to all other formats.
  */
@@ -117,6 +131,7 @@ export class SchemaPreviewPanel {
         detectDetails: string
     ): string {
         const fileName = filePath.split(/[/\\]/).pop();
+        const nonce = getNonce();
 
         const conversionTabs = conversions.map((c, i) => {
             const active = i === 0 ? 'active' : '';
@@ -141,6 +156,7 @@ export class SchemaPreviewPanel {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    ${this.cspMeta(nonce)}
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 0; margin: 0; color: var(--vscode-editor-foreground); background: var(--vscode-editor-background); }
         .header { padding: 8px 16px; background: var(--vscode-sideBar-background); border-bottom: 1px solid var(--vscode-panel-border); display: flex; align-items: center; gap: 12px; }
@@ -164,13 +180,13 @@ export class SchemaPreviewPanel {
 <body>
     <div class="header">
         <h3>Schema Preview</h3>
-        <span class="source-badge">${sourceFormat}</span>
+        <span class="source-badge">${this.escapeHtml(sourceFormat)}</span>
         <span class="file-path">${this.escapeHtml(fileName || '')}</span>
     </div>
     <div class="tabs">${tabButtons}</div>
     <div class="tab-content">${conversionTabs}</div>
-    <div class="details">${this.escapeHtml(detectDetails.split('\\n').slice(0, 3).join('\\n'))}</div>
-    <script>
+    <div class="details">${this.escapeHtml(detectDetails.split('\n').slice(0, 3).join('\n'))}</div>
+    <script nonce="${nonce}">
         (function() {
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -195,7 +211,7 @@ export class SchemaPreviewPanel {
 
     private getErrorHtml(message: string): string {
         return `<!DOCTYPE html>
-<html><body style="padding: 16px;">
+<html><head>${this.cspMeta()}</head><body style="padding: 16px;">
     <div class="error" style="color: var(--vscode-errorForeground);">
         <p><strong>Error:</strong></p>
         <pre>${this.escapeHtml(message)}</pre>
@@ -203,12 +219,20 @@ export class SchemaPreviewPanel {
 </body></html>`;
     }
 
+    /** Build a strict Content-Security-Policy <meta> for this panel's webview. */
+    private cspMeta(nonce?: string): string {
+        const csp = this.panel?.webview.cspSource ?? '';
+        const script = nonce ? ` script-src 'nonce-${nonce}';` : '';
+        return `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${csp} 'unsafe-inline';${script}">`;
+    }
+
     private escapeHtml(text: string): string {
         return text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     dispose() {
