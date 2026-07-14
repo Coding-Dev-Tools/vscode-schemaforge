@@ -24,3 +24,50 @@ test("smoke: required repo files present", () => {
     assert.ok(fs.existsSync(path.join(root, f)), `${f} must exist`);
   }
 });
+
+// --- Webview hardening regression guards (network-free, source-level) --------
+// These lock in the CSP + escaping + newline fixes made to the two schema
+// preview webviews so a future edit cannot silently reopen the injection hole
+// or reintroduce the split('\\n') truncation no-op.
+const WEBVIEW_FILES = [
+  "src/panels/previewPanel.ts",
+  "src/providers/schemaEditorProvider.ts",
+];
+
+test("security: script-enabled webviews declare a CSP + nonce", () => {
+  const root = path.join(__dirname, "..");
+  for (const rel of WEBVIEW_FILES) {
+    const src = fs.readFileSync(path.join(root, rel), "utf-8");
+    if (!/enableScripts:\s*true/.test(src)) continue;
+    assert.match(src, /Content-Security-Policy/, `${rel} must set a CSP`);
+    assert.match(src, /getNonce\(\)/, `${rel} must generate a script nonce`);
+    assert.match(
+      src,
+      /<script nonce="\$\{nonce\}"/,
+      `${rel} inline script must carry the nonce`
+    );
+  }
+});
+
+test("security: detected source format is escaped in webviews", () => {
+  const root = path.join(__dirname, "..");
+  for (const rel of WEBVIEW_FILES) {
+    const src = fs.readFileSync(path.join(root, rel), "utf-8");
+    assert.doesNotMatch(
+      src,
+      /badge[^>]*>\$\{sourceFormat\}</,
+      `${rel} must escape sourceFormat before interpolating it`
+    );
+  }
+});
+
+test("correctness: preview detail truncation splits on real newlines", () => {
+  const src = fs.readFileSync(
+    path.join(__dirname, "..", "src/panels/previewPanel.ts"),
+    "utf-8"
+  );
+  assert.ok(
+    !src.includes("split('\\\\n')"),
+    "detectDetails must split on a real newline, not the literal '\\\\n'"
+  );
+});

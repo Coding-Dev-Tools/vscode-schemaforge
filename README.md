@@ -5,8 +5,6 @@
 
 Bidirectional schema converter extension for VS Code — convert between SQL DDL, Prisma, Django, TypeORM, SQLAlchemy, Alembic, JSON Schema, GraphQL, EF Core, and Scala case classes.
 
-Part of the [DevForge](https://devforge.revenueholdings.dev) open-source CLI tool suite by [Revenue Holdings](https://revenueholdings.dev).
-
 ## Features
 
 - **Live Preview** — side panel showing your active schema file converted to all 11 formats

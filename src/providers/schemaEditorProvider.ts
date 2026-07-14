@@ -2,6 +2,20 @@ import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
 
 /**
+ * Generate a random nonce so the webview's Content-Security-Policy can
+ * whitelist only our own inline <script>, blocking any injected markup
+ * from executing.
+ */
+function getNonce(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let text = '';
+    for (let i = 0; i < 32; i++) {
+        text += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return text;
+}
+
+/**
  * Custom editor provider for .schemaforge files.
  * Shows a rich preview of the schema and its conversions.
  */
@@ -18,12 +32,12 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
             localResourceRoots: [this.extensionUri],
         };
 
-        webviewPanel.webview.html = this.getLoadingHtml();
+        webviewPanel.webview.html = this.getLoadingHtml(webviewPanel.webview);
 
         const render = async () => {
             const content = document.getText();
             if (!content.trim()) {
-                webviewPanel.webview.html = this.getEmptyHtml();
+                webviewPanel.webview.html = this.getEmptyHtml(webviewPanel.webview);
                 return;
             }
 
@@ -47,9 +61,9 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
                     }
                 }
 
-                webviewPanel.webview.html = this.getPreviewHtml(sourceFormat, conversions, document.fileName);
+                webviewPanel.webview.html = this.getPreviewHtml(sourceFormat, conversions, document.fileName, webviewPanel.webview);
             } catch (e) {
-                webviewPanel.webview.html = this.getErrorHtml(e instanceof Error ? e.message : String(e));
+                webviewPanel.webview.html = this.getErrorHtml(e instanceof Error ? e.message : String(e), webviewPanel.webview);
             }
         };
 
@@ -80,31 +94,48 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
         return tmpFile;
     }
 
-    private getLoadingHtml(): string {
-        return `<!DOCTYPE html>
-<html><body style="padding: 32px; text-align: center;"><p>Loading SchemaForge preview...</p></body></html>`;
+    /** Escape text for safe interpolation into webview HTML. */
+    private escapeHtml(text: string): string {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
-    private getEmptyHtml(): string {
+    /** Build a strict Content-Security-Policy <meta> for a preview webview. */
+    private cspMeta(webview: vscode.Webview, nonce?: string): string {
+        const script = nonce ? ` script-src 'nonce-${nonce}';` : '';
+        return `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline';${script}">`;
+    }
+
+    private getLoadingHtml(webview: vscode.Webview): string {
         return `<!DOCTYPE html>
-<html><body style="padding: 32px; text-align: center; color: var(--vscode-descriptionForeground);">
+<html><head>${this.cspMeta(webview)}</head><body style="padding: 32px; text-align: center;"><p>Loading SchemaForge preview...</p></body></html>`;
+    }
+
+    private getEmptyHtml(webview: vscode.Webview): string {
+        return `<!DOCTYPE html>
+<html><head>${this.cspMeta(webview)}</head><body style="padding: 32px; text-align: center; color: var(--vscode-descriptionForeground);">
     <p>Empty schema file. Add content to see format conversions.</p>
 </body></html>`;
     }
 
-    private getErrorHtml(message: string): string {
-        const escaped = message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    private getErrorHtml(message: string, webview: vscode.Webview): string {
         return `<!DOCTYPE html>
-<html><body style="padding: 16px;">
-    <div style="color: var(--vscode-errorForeground);"><strong>Error:</strong><pre>${escaped}</pre></div>
+<html><head>${this.cspMeta(webview)}</head><body style="padding: 16px;">
+    <div style="color: var(--vscode-errorForeground);"><strong>Error:</strong><pre>${this.escapeHtml(message)}</pre></div>
 </body></html>`;
     }
 
     private getPreviewHtml(
         sourceFormat: string,
         conversions: Array<{ format: string; result: string; error?: string }>,
-        fileName: string
+        fileName: string,
+        webview: vscode.Webview
     ): string {
+        const nonce = getNonce();
         const tabButtons = conversions.map((c, i) => {
             const active = i === 0 ? 'active' : '';
             return `<button class="tab-btn ${active}" data-tab="fmt-${c.format}">${c.format}</button>`;
@@ -113,8 +144,8 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
         const tabPanes = conversions.map((c, i) => {
             const active = i === 0 ? 'active' : '';
             const content = c.error
-                ? `<div class="err-block">${c.error.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`
-                : `<pre><code>${c.result.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+                ? `<div class="err-block">${this.escapeHtml(c.error)}</div>`
+                : `<pre><code>${this.escapeHtml(c.result)}</code></pre>`;
             return `<div class="tab-pane ${active}" id="fmt-${c.format}">${content}</div>`;
         }).join('\n');
 
@@ -122,6 +153,7 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+${this.cspMeta(webview, nonce)}
 <style>
 body { font-family: -apple-system, sans-serif; margin: 0; padding: 0; color: var(--vscode-editor-foreground); background: var(--vscode-editor-background); }
 .header { padding: 8px 16px; background: var(--vscode-sideBar-background); border-bottom: 1px solid var(--vscode-panel-border); display: flex; align-items: center; gap: 12px; }
@@ -141,12 +173,12 @@ code { font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
 <body>
 <div class="header">
     <h2>SchemaForge</h2>
-    <span class="badge">${sourceFormat}</span>
-    <span class="fname">${fileName.replace(/&/g, '&amp;')}</span>
+    <span class="badge">${this.escapeHtml(sourceFormat)}</span>
+    <span class="fname">${this.escapeHtml(fileName)}</span>
 </div>
 <div class="tabs">${tabButtons}</div>
 <div class="content">${tabPanes}</div>
-<script>
+<script nonce="${nonce}">
 (function() {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
