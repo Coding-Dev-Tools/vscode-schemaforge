@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
 import { getOutputChannel } from '../output';
+import { SCHEMA_FORMATS, normalizeFormat } from '../formats';
 
 export class ConvertCommand {
     static async run(uri?: vscode.Uri) {
@@ -23,10 +24,10 @@ export class ConvertCommand {
 
         // Detect format first
         const detectResult = await execSchemaForge(['detect', sourcePath]);
-        const detectedFormat = detectResult.trim();
+        const detectedFormat = normalizeFormat(detectResult) ?? '';
 
         // Let user pick target format
-        const formats = ['sql', 'prisma', 'drizzle', 'typeorm', 'django', 'sqlalchemy', 'alembic', 'json_schema', 'graphql', 'ef', 'scala'];
+        const formats = SCHEMA_FORMATS;
         const target = await vscode.window.showQuickPick(
             formats.filter(f => f !== detectedFormat),
             { placeHolder: `Source: ${detectedFormat}. Pick target format:`, canPickMany: false }
