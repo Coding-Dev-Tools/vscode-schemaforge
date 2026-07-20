@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
+import { SCHEMA_FORMATS, normalizeFormat } from '../formats';
 
 /**
  * Generate a random nonce so the webview's Content-Security-Policy can
@@ -87,10 +88,10 @@ export class SchemaPreviewPanel {
         try {
             // Detect format
             const detectResult = await execSchemaForge(['detect', this.currentFile]);
-            const sourceFormat = detectResult.trim();
+            const sourceFormat = normalizeFormat(detectResult) ?? '';
 
             // Get all formats
-            const allFormats = ['sql', 'prisma', 'drizzle', 'typeorm', 'django', 'sqlalchemy', 'alembic', 'json_schema', 'graphql', 'ef', 'scala'];
+            const allFormats = SCHEMA_FORMATS;
             const targetFormats = allFormats.filter(f => f !== sourceFormat);
 
             // Convert to all other formats (limit to 5 most relevant to keep it fast)

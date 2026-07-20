@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { execFile, execFileSync } from 'child_process';
+import { SCHEMA_FORMATS } from './formats';
 
 /**
  * Get the schemaforge CLI path from settings or default to 'schemaforge'.
@@ -99,6 +100,6 @@ export async function getAvailableFormats(): Promise<string[]> {
         return JSON.parse(result);
     } catch {
         // Fallback
-        return ['sql', 'prisma', 'drizzle', 'typeorm', 'django', 'sqlalchemy', 'alembic', 'json_schema', 'graphql', 'ef', 'scala'];
+        return SCHEMA_FORMATS;
     }
 }
