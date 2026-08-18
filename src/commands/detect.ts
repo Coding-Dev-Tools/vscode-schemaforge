@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
 import { getOutputChannel } from '../output';
+import { normalizeFormat } from '../formats';
 
 export class DetectCommand {
     static async run(uri?: vscode.Uri) {
@@ -15,7 +16,7 @@ export class DetectCommand {
 
         const sourcePath = uri.fsPath;
         const result = await execSchemaForge(['detect', sourcePath]);
-        const detectedFormat = result.trim();
+        const detectedFormat = normalizeFormat(result) ?? '';
 
         // Show in status bar
         vscode.window.setStatusBarMessage(`$(symbol-structure) SchemaForge: ${detectedFormat}`, 5000);

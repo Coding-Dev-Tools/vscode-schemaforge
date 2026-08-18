@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
 import { getOutputChannel } from '../output';
+import { normalizeFormat } from '../formats';
 
 export class DiffCommand {
     static async run() {
@@ -20,8 +21,8 @@ export class DiffCommand {
         const [fileA, fileB] = [files[0].fsPath, files[1].fsPath];
 
         // Detect formats
-        const detectA = (await execSchemaForge(['detect', fileA])).trim();
-        const detectB = (await execSchemaForge(['detect', fileB])).trim();
+        const detectA = normalizeFormat(await execSchemaForge(['detect', fileA])) ?? '';
+        const detectB = normalizeFormat(await execSchemaForge(['detect', fileB])) ?? '';
 
         // Convert both to canonical format (SQL) for comparison
         const canonicalA = await execSchemaForge(['convert', fileA, '--from', detectA, '--to', 'sql']);

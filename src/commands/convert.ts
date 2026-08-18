@@ -60,7 +60,7 @@ export class ConvertCommand {
         const defaultTarget = vscode.workspace.getConfiguration('schemaforge').get('defaultTargetFormat', 'sql');
 
         const detectResult = await execSchemaForge(['detect', sourcePath]);
-        const detectedFormat = detectResult.trim();
+        const detectedFormat = normalizeFormat(detectResult) ?? '';
 
         const result = await execSchemaForge(['convert', sourcePath, '--from', detectedFormat, '--to', defaultTarget as string]);
 

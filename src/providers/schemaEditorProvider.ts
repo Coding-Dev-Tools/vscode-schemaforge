@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
+import { SCHEMA_FORMATS, normalizeFormat } from '../formats';
 
 /**
  * Generate a random nonce so the webview's Content-Security-Policy can
@@ -46,10 +47,9 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
                 const tmpFile = await this.writeTempFile(content);
 
                 const detectResult = await execSchemaForge(['detect', tmpFile]);
-                const sourceFormat = detectResult.trim();
+                const sourceFormat = normalizeFormat(detectResult) ?? '';
 
-                const allFormats = ['sql', 'prisma', 'drizzle', 'typeorm', 'django', 'sqlalchemy', 'alembic', 'json_schema', 'graphql', 'ef', 'scala'];
-                const targetFormats = allFormats.filter(f => f !== sourceFormat).slice(0, 6);
+                const targetFormats = SCHEMA_FORMATS.filter(f => f !== sourceFormat).slice(0, 6);
 
                 const conversions: Array<{ format: string; result: string; error?: string }> = [];
                 for (const fmt of targetFormats) {
