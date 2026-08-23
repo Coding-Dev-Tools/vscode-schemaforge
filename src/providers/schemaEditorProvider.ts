@@ -1,19 +1,7 @@
 import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
-
-/**
- * Generate a random nonce so the webview's Content-Security-Policy can
- * whitelist only our own inline <script>, blocking any injected markup
- * from executing.
- */
-function getNonce(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let text = '';
-    for (let i = 0; i < 32; i++) {
-        text += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return text;
-}
+import { SCHEMA_FORMATS, normalizeFormat } from '../formats';
+import { escapeHtml, getNonce } from '../webview';
 
 /**
  * Custom editor provider for .schemaforge files.
@@ -41,20 +29,26 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
                 return;
             }
 
+            // The conversion runs against a temp copy of the document. It must
+            // live under the OS temp dir (never inside the extension install
+            // folder) and be deleted afterwards - the previous implementation
+            // leaked one schemaforge_preview_*.tmp per render/save forever.
+            const fs = await import('fs');
+            const path = await import('path');
+            let tmpFile: string | undefined;
             try {
-                // Write content to a temp file for CLI processing
-                const tmpFile = await this.writeTempFile(content);
+                const tmp = await this.writeTempFile(content, document.fileName);
+                tmpFile = tmp.file;
 
-                const detectResult = await execSchemaForge(['detect', tmpFile]);
-                const sourceFormat = detectResult.trim();
+                const detectResult = await execSchemaForge(['detect', tmp.file]);
+                const sourceFormat = normalizeFormat(detectResult) ?? '';
 
-                const allFormats = ['sql', 'prisma', 'drizzle', 'typeorm', 'django', 'sqlalchemy', 'alembic', 'json_schema', 'graphql', 'ef', 'scala'];
-                const targetFormats = allFormats.filter(f => f !== sourceFormat).slice(0, 6);
+                const targetFormats = SCHEMA_FORMATS.filter(f => f !== sourceFormat).slice(0, 6);
 
                 const conversions: Array<{ format: string; result: string; error?: string }> = [];
                 for (const fmt of targetFormats) {
                     try {
-                        const result = await execSchemaForge(['convert', tmpFile, '--from', sourceFormat, '--to', fmt]);
+                        const result = await execSchemaForge(['convert', tmp.file, '--from', sourceFormat, '--to', fmt]);
                         conversions.push({ format: fmt, result: result || '(empty)' });
                     } catch (e) {
                         conversions.push({ format: fmt, result: '', error: e instanceof Error ? e.message : String(e) });
@@ -64,6 +58,12 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
                 webviewPanel.webview.html = this.getPreviewHtml(sourceFormat, conversions, document.fileName, webviewPanel.webview);
             } catch (e) {
                 webviewPanel.webview.html = this.getErrorHtml(e instanceof Error ? e.message : String(e), webviewPanel.webview);
+            } finally {
+                if (tmpFile) {
+                    try {
+                        fs.rmSync(path.dirname(tmpFile), { recursive: true, force: true }); // best-effort cleanup
+                    } catch { /* OS temp dir is swept periodically anyway */ }
+                }
             }
         };
 
@@ -82,26 +82,17 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
         });
     }
 
-    private async writeTempFile(content: string): Promise<string> {
+    private async writeTempFile(content: string, originalName: string): Promise<{ file: string; dir: string }> {
         const fs = await import('fs');
+        const os = await import('os');
         const path = await import('path');
-        const tmpDir = path.join(__dirname, '..', '..', '.temp');
-        if (!fs.existsSync(tmpDir)) {
-            fs.mkdirSync(tmpDir, { recursive: true });
-        }
-        const tmpFile = path.join(tmpDir, `schemaforge_preview_${Date.now()}.tmp`);
-        fs.writeFileSync(tmpFile, content, 'utf-8');
-        return tmpFile;
-    }
-
-    /** Escape text for safe interpolation into webview HTML. */
-    private escapeHtml(text: string): string {
-        return text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+        // mkdtemp under the OS temp dir: collision-proof, outside the install
+        // folder, and removable as a whole directory afterwards.
+        const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'schemaforge-preview-'));
+        const base = path.basename(originalName).replace(/[^\w.-]+/g, '_') || 'schema';
+        const file = path.join(dir, `${base}.tmp`);
+        await fs.promises.writeFile(file, content, 'utf-8');
+        return { file, dir };
     }
 
     /** Build a strict Content-Security-Policy <meta> for a preview webview. */
@@ -125,7 +116,7 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
     private getErrorHtml(message: string, webview: vscode.Webview): string {
         return `<!DOCTYPE html>
 <html><head>${this.cspMeta(webview)}</head><body style="padding: 16px;">
-    <div style="color: var(--vscode-errorForeground);"><strong>Error:</strong><pre>${this.escapeHtml(message)}</pre></div>
+    <div style="color: var(--vscode-errorForeground);"><strong>Error:</strong><pre>${escapeHtml(message)}</pre></div>
 </body></html>`;
     }
 
@@ -144,8 +135,8 @@ export class SchemaPreviewProvider implements vscode.CustomTextEditorProvider {
         const tabPanes = conversions.map((c, i) => {
             const active = i === 0 ? 'active' : '';
             const content = c.error
-                ? `<div class="err-block">${this.escapeHtml(c.error)}</div>`
-                : `<pre><code>${this.escapeHtml(c.result)}</code></pre>`;
+                ? `<div class="err-block">${escapeHtml(c.error)}</div>`
+                : `<pre><code>${escapeHtml(c.result)}</code></pre>`;
             return `<div class="tab-pane ${active}" id="fmt-${c.format}">${content}</div>`;
         }).join('\n');
 
@@ -173,8 +164,8 @@ code { font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
 <body>
 <div class="header">
     <h2>SchemaForge</h2>
-    <span class="badge">${this.escapeHtml(sourceFormat)}</span>
-    <span class="fname">${this.escapeHtml(fileName)}</span>
+    <span class="badge">${escapeHtml(sourceFormat)}</span>
+    <span class="fname">${escapeHtml(fileName)}</span>
 </div>
 <div class="tabs">${tabButtons}</div>
 <div class="content">${tabPanes}</div>

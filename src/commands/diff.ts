@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { execSchemaForge } from '../cli';
+import { normalizeFormat } from '../formats';
 import { getOutputChannel } from '../output';
 
 export class DiffCommand {
@@ -16,12 +17,24 @@ export class DiffCommand {
             vscode.window.showWarningMessage('Please select exactly two files to diff');
             return;
         }
+        if (files.length > 2) {
+            vscode.window.showWarningMessage('SchemaForge: more than two files selected - diffing the first two.');
+        }
 
         const [fileA, fileB] = [files[0].fsPath, files[1].fsPath];
 
-        // Detect formats
-        const detectA = (await execSchemaForge(['detect', fileA])).trim();
-        const detectB = (await execSchemaForge(['detect', fileB])).trim();
+        // Detect formats, normalized so mixed-case/padded labels don't reach
+        // convert --from verbatim and fail opaquely inside the CLI.
+        const detectA = normalizeFormat(await execSchemaForge(['detect', fileA]));
+        const detectB = normalizeFormat(await execSchemaForge(['detect', fileB]));
+
+        if (!detectA || !detectB) {
+            const failed = [!detectA && fileA, !detectB && fileB].filter(Boolean).join(', ');
+            vscode.window.showErrorMessage(
+                `SchemaForge: could not detect the schema format of ${failed}. Diff aborted.`
+            );
+            return;
+        }
 
         // Convert both to canonical format (SQL) for comparison
         const canonicalA = await execSchemaForge(['convert', fileA, '--from', detectA, '--to', 'sql']);

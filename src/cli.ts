@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { execFile, execFileSync } from 'child_process';
+import { execFile } from 'child_process';
 import { SCHEMA_FORMATS } from './formats';
 
 /**
@@ -67,28 +67,6 @@ export async function execSchemaForge(args: string[]): Promise<string> {
             resolve(stdout || '');
         });
     });
-}
-
-/**
- * Synchronous version for simple quick checks.
- *
- * Same execution semantics as execSchemaForge — argument-array by default,
- * with the same .cmd-on-Windows exception (see ``needsShell``).
- */
-export function execSchemaForgeSync(args: string[]): string {
-    const cli = getCliPath();
-
-    try {
-        return execFileSync(cli, args, {
-            timeout: 10000,
-            maxBuffer: 10 * 1024 * 1024,
-            encoding: 'utf-8',
-            shell: needsShell(cli),
-        });
-    } catch (e) {
-        console.error(`SchemaForge sync exec failed: ${e instanceof Error ? e.message : String(e)}`);
-        return '';
-    }
 }
 
 /**

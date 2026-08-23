@@ -22,9 +22,18 @@ export class ConvertCommand {
 
         const sourcePath = uri.fsPath;
 
-        // Detect format first
+        // Detect format first. When detection comes back empty, ask instead of
+        // passing an empty --from flag that fails opaquely inside the CLI (the
+        // classic silent-failure trap).
         const detectResult = await execSchemaForge(['detect', sourcePath]);
-        const detectedFormat = normalizeFormat(detectResult) ?? '';
+        let detectedFormat = normalizeFormat(detectResult);
+        if (!detectedFormat) {
+            detectedFormat = await vscode.window.showQuickPick(
+                SCHEMA_FORMATS,
+                { placeHolder: `Could not auto-detect format of ${sourcePath}. Pick the SOURCE format:`, canPickMany: false }
+            );
+            if (!detectedFormat) return;
+        }
 
         // Let user pick target format
         const formats = SCHEMA_FORMATS;
@@ -60,14 +69,21 @@ export class ConvertCommand {
         const defaultTarget = vscode.workspace.getConfiguration('schemaforge').get('defaultTargetFormat', 'sql');
 
         const detectResult = await execSchemaForge(['detect', sourcePath]);
-        const detectedFormat = detectResult.trim();
+        const detectedFormat = normalizeFormat(detectResult);
+        if (!detectedFormat) {
+            vscode.window.showWarningMessage(
+                'SchemaForge could not detect the schema format. Run "SchemaForge: Convert Schema File" to choose formats manually.'
+            );
+            return;
+        }
+        const targetFormat = normalizeFormat(defaultTarget as string) ?? (defaultTarget as string);
 
-        const result = await execSchemaForge(['convert', sourcePath, '--from', detectedFormat, '--to', defaultTarget as string]);
+        const result = await execSchemaForge(['convert', sourcePath, '--from', detectedFormat, '--to', targetFormat]);
 
-        const output = getOutputChannel(`SchemaForge: ${detectedFormat} → ${defaultTarget}`);
+        const output = getOutputChannel(`SchemaForge: ${detectedFormat} → ${targetFormat}`);
         output.clear();
         output.appendLine(`Converted: ${sourcePath}`);
-        output.appendLine(`Format: ${detectedFormat} → ${defaultTarget}`);
+        output.appendLine(`Format: ${detectedFormat} → ${targetFormat}`);
         output.appendLine('-'.repeat(40));
         output.append(result);
         output.show();

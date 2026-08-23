@@ -71,3 +71,41 @@ test("correctness: preview detail truncation splits on real newlines", () => {
     "detectDetails must split on a real newline, not the literal '\\\\n'"
   );
 });
+
+// --- Temp-file lifecycle + nonce randomness + shared-helper guards ----------
+
+test("security: webview nonces come from crypto, not Math.random", () => {
+  const root = path.join(__dirname, "..");
+  for (const rel of WEBVIEW_FILES) {
+    const src = fs.readFileSync(path.join(root, rel), "utf-8");
+    assert.doesNotMatch(
+      src,
+      /Math\.floor\(Math\.random/,
+      `${rel} must not derive CSP nonces from Math.random (predictable)`
+    );
+    assert.match(
+      src,
+      /from ["']\.\.\/webview["']/,
+      `${rel} must use the shared hardened helpers in src/webview.ts`
+    );
+  }
+});
+
+test("correctness: preview temp files use the OS temp dir and are cleaned up", () => {
+  const src = fs.readFileSync(
+    path.join(__dirname, "..", "src/providers/schemaEditorProvider.ts"),
+    "utf-8"
+  );
+  assert.doesNotMatch(
+    src,
+    /["']\.temp["']/,
+    "temp files must never be written into the extension install folder"
+  );
+  assert.match(src, /mkdtemp/, "must create a unique per-render temp dir");
+  assert.match(src, /os\.tmpdir\(\)/, "temp dir must live under the OS temp dir");
+  assert.match(
+    src,
+    /finally\s*\{[\s\S]*?rmSync/,
+    "the temp dir must be removed in a finally block"
+  );
+});
