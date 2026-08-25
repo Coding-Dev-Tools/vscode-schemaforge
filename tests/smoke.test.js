@@ -109,3 +109,29 @@ test("correctness: preview temp files use the OS temp dir and are cleaned up", (
     "the temp dir must be removed in a finally block"
   );
 });
+
+// --- CLI shell-mode injection guards (Windows .cmd/.bat wrappers) ------------
+// When schemaforge.cliPath points at a .cmd/.bat on Windows, execFile must run
+// with shell:true — and Node then flattens argv into one `cmd.exe /c` line with
+// NO quoting of its own. These guards lock in the fix that quotes every
+// argument and rejects metacharacter-bearing ones instead of letting cmd.exe
+// interpret them as control syntax.
+
+test("security: shell-mode args are quoted and metacharacters rejected", () => {
+  const src = fs.readFileSync(path.join(__dirname, "..", "src/cli.ts"), "utf-8");
+  assert.match(src, /CMD_METACHARS/, "cli.ts must define a cmd.exe metacharacter set");
+  assert.match(src, /quoteShellArg/, "cli.ts must export a quoting helper for shell mode");
+  assert.match(
+    src,
+    /useShell\s*\?\s*args\.map\(quoteShellArg\)\s*:\s*args/,
+    "shell-mode invocations must pass every argument through quoteShellArg"
+  );
+});
+
+test("security: metacharacter rejection fires BEFORE any process spawn", () => {
+  const src = fs.readFileSync(path.join(__dirname, "..", "src/cli.ts"), "utf-8");
+  const mapIdx = src.indexOf("args.map(quoteShellArg)");
+  const spawnIdx = src.indexOf("execFile(cli");
+  assert.ok(mapIdx !== -1 && spawnIdx !== -1, "both markers present");
+  assert.ok(mapIdx < spawnIdx, "quoting/rejection must happen before execFile is called");
+});
