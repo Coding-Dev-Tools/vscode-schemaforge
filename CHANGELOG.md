@@ -1,5 +1,27 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Preview custom editor no longer leaks temp files: conversion scratch files
+  now go through `mkdtemp` under the OS temp directory and are removed after
+  every render (previously one `schemaforge_preview_*.tmp` was left inside the
+  extension install folder per render/save, forever)
+- Empty format detection no longer reaches the CLI as an empty `--from` flag:
+  Convert asks for the source format, QuickConvert and Diff surface a clear
+  message instead of an opaque CLI failure
+
+### Changed
+- Webview nonces are now cryptographically random (`crypto.randomBytes`) in
+  both preview surfaces; nonce generation and HTML escaping live in one shared
+  module (`src/webview.ts`) so they cannot drift apart again
+- Detected formats are normalized (`formats.normalizeFormat`) before being
+  passed to `convert --from` in QuickConvert, Diff and the `.schemaforge`
+  editor; the provider reuses the canonical `SCHEMA_FORMATS` list instead of
+  its own inline copy
+- Removed unused `execSchemaForgeSync`, which silently swallowed CLI errors
+
+
 ## [1.7.0] - 2026-07-02
 
 ### Added

@@ -71,3 +71,67 @@ test("correctness: preview detail truncation splits on real newlines", () => {
     "detectDetails must split on a real newline, not the literal '\\\\n'"
   );
 });
+
+// --- Temp-file lifecycle + nonce randomness + shared-helper guards ----------
+
+test("security: webview nonces come from crypto, not Math.random", () => {
+  const root = path.join(__dirname, "..");
+  for (const rel of WEBVIEW_FILES) {
+    const src = fs.readFileSync(path.join(root, rel), "utf-8");
+    assert.doesNotMatch(
+      src,
+      /Math\.floor\(Math\.random/,
+      `${rel} must not derive CSP nonces from Math.random (predictable)`
+    );
+    assert.match(
+      src,
+      /from ["']\.\.\/webview["']/,
+      `${rel} must use the shared hardened helpers in src/webview.ts`
+    );
+  }
+});
+
+test("correctness: preview temp files use the OS temp dir and are cleaned up", () => {
+  const src = fs.readFileSync(
+    path.join(__dirname, "..", "src/providers/schemaEditorProvider.ts"),
+    "utf-8"
+  );
+  assert.doesNotMatch(
+    src,
+    /["']\.temp["']/,
+    "temp files must never be written into the extension install folder"
+  );
+  assert.match(src, /mkdtemp/, "must create a unique per-render temp dir");
+  assert.match(src, /os\.tmpdir\(\)/, "temp dir must live under the OS temp dir");
+  assert.match(
+    src,
+    /finally\s*\{[\s\S]*?rmSync/,
+    "the temp dir must be removed in a finally block"
+  );
+});
+
+// --- CLI shell-mode injection guards (Windows .cmd/.bat wrappers) ------------
+// When schemaforge.cliPath points at a .cmd/.bat on Windows, execFile must run
+// with shell:true — and Node then flattens argv into one `cmd.exe /c` line with
+// NO quoting of its own. These guards lock in the fix that quotes every
+// argument and rejects metacharacter-bearing ones instead of letting cmd.exe
+// interpret them as control syntax.
+
+test("security: shell-mode args are quoted and metacharacters rejected", () => {
+  const src = fs.readFileSync(path.join(__dirname, "..", "src/cli.ts"), "utf-8");
+  assert.match(src, /CMD_METACHARS/, "cli.ts must define a cmd.exe metacharacter set");
+  assert.match(src, /quoteShellArg/, "cli.ts must export a quoting helper for shell mode");
+  assert.match(
+    src,
+    /useShell\s*\?\s*args\.map\(quoteShellArg\)\s*:\s*args/,
+    "shell-mode invocations must pass every argument through quoteShellArg"
+  );
+});
+
+test("security: metacharacter rejection fires BEFORE any process spawn", () => {
+  const src = fs.readFileSync(path.join(__dirname, "..", "src/cli.ts"), "utf-8");
+  const mapIdx = src.indexOf("args.map(quoteShellArg)");
+  const spawnIdx = src.indexOf("execFile(cli");
+  assert.ok(mapIdx !== -1 && spawnIdx !== -1, "both markers present");
+  assert.ok(mapIdx < spawnIdx, "quoting/rejection must happen before execFile is called");
+});

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { execFile, execFileSync } from 'child_process';
+import { execFile } from 'child_process';
 import { SCHEMA_FORMATS } from './formats';
 
 /**
@@ -23,6 +23,36 @@ function needsShell(cli: string): boolean {
 }
 
 /**
+ * Characters that cmd.exe treats as command separators / substitutions.
+ *
+ * When ``execFile`` runs with ``shell: true``, Node joins the CLI path and all
+ * arguments into one string handed to ``cmd.exe /c`` WITHOUT quoting them.
+ * Any of these characters arriving inside a file path or argument would then
+ * be interpreted by cmd.exe as control syntax — e.g. a schema file named
+ * ``foo&calc.bat`` or a workspace path containing ``%VAR%`` would execute an
+ * attacker-chosen command instead of being passed to the CLI verbatim.
+ */
+const CMD_METACHARS = /[&|<>()^%!";\r\n]/;
+
+/**
+ * Quote a single argument for safe passage through ``cmd.exe /c``.
+ *
+ * Exported for unit testing. Doubles embedded quotes is intentionally NOT
+ * supported: because CMD_METACHARS rejects arguments containing quotes, this
+ * function only ever has to wrap plain, metacharacter-free text in double
+ * quotes so that spaces in paths survive the shell join.
+ */
+export function quoteShellArg(arg: string): string {
+    if (arg.length > 0 && CMD_METACHARS.test(arg)) {
+        throw new Error(
+            `SchemaForge: refusing to pass argument containing shell metacharacters ` +
+            `while running the CLI via a Windows .cmd/.bat wrapper: ${JSON.stringify(arg.slice(0, 120))}`
+        );
+    }
+    return `"${arg}"`;
+}
+
+/**
  * Execute schemaforge CLI and return stdout.
  * Throws with stderr details on failure.
  *
@@ -30,18 +60,22 @@ function needsShell(cli: string): boolean {
  * and the user/workspace-settable ``schemaforge.cliPath`` cannot inject shell
  * commands (&, |, ;, `, $(), quotes, etc. are passed through as literal argv
  * entries).  The only exception is when ``cliPath`` points at a .cmd or .bat
- * file on Windows — see ``needsShell``.
+ * file on Windows — see ``needsShell`` — where every argument is quoted and
+ * metacharacter-bearing arguments are rejected outright, because Node does no
+ * quoting of its own when it flattens argv into a ``cmd.exe /c`` line.
  */
 export async function execSchemaForge(args: string[]): Promise<string> {
     const cli = getCliPath();
+    const useShell = needsShell(cli);
+    const finalArgs = useShell ? args.map(quoteShellArg) : args;
 
     console.log(`SchemaForge exec: ${cli} ${args.join(' ')}`);
 
     return new Promise((resolve, reject) => {
-        execFile(cli, args, {
+        execFile(cli, finalArgs, {
             timeout: 30000,
             maxBuffer: 10 * 1024 * 1024, // 10MB
-            shell: needsShell(cli),
+            shell: useShell,
         }, (error, stdout, stderr) => {
             if (error) {
                 // Try to provide helpful error
@@ -67,28 +101,6 @@ export async function execSchemaForge(args: string[]): Promise<string> {
             resolve(stdout || '');
         });
     });
-}
-
-/**
- * Synchronous version for simple quick checks.
- *
- * Same execution semantics as execSchemaForge — argument-array by default,
- * with the same .cmd-on-Windows exception (see ``needsShell``).
- */
-export function execSchemaForgeSync(args: string[]): string {
-    const cli = getCliPath();
-
-    try {
-        return execFileSync(cli, args, {
-            timeout: 10000,
-            maxBuffer: 10 * 1024 * 1024,
-            encoding: 'utf-8',
-            shell: needsShell(cli),
-        });
-    } catch (e) {
-        console.error(`SchemaForge sync exec failed: ${e instanceof Error ? e.message : String(e)}`);
-        return '';
-    }
 }
 
 /**
